@@ -1,0 +1,6 @@
+O jogo não possui objetivo mas é base para o desenvolvimento de outro jogo.
+
+Direcionais - movimentam o jogador
+"a" - Ativa o kit médico
+Espaço - atira
+Esc - pause (cuidado, o pause não para o jogo, apenas abre o menu)
