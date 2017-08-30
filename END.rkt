@@ -1,0 +1,624 @@
+#lang racket
+(require 2htdp/universe 2htdp/image)
+(require 2htdp/batch-io)
+(require math/number-theory)
+
+(struct player (posx posy posx-anterior posy-anterior vida status sprite direcao movimentacao local arma balas med-kit)#:mutable)
+(struct enemy (posx posy vida sprite direcao movimentacao)#:mutable)
+(struct game (status acao-item)#:mutable)
+(struct gun (alcance espalhamento dano cadencia))
+(struct medic (posx posy ativo)#:mutable)
+(struct amno (posx posy ativo)#:mutable)
+
+(define arma-1 (gun 100 20 18 4))
+(define arma arma-1)
+(define med-kit (medic 200 300 #t))
+(define municao (amno 100 300 #t))
+
+(define jogador (player 400 300 400 300 100 "Ok" 0 "Baixo" "Parado" 1 1 100 1))
+(define save-temp '())
+
+(define (salvar)
+  (write-file "save-game.txt" (string-append 
+                               (format "~a\n" (player-posx jogador)) 
+                               (format "~a\n" (player-posy jogador))
+                               (format "~a\n" (player-posx-anterior jogador))
+                               (format "~a\n" (player-posy-anterior jogador))
+                               (format "~a\n" (player-vida jogador))
+                               (format "~a\n" (player-status jogador))
+                               (format "~a\n" (player-sprite jogador))
+                               (format "~a\n" (player-direcao jogador))
+                               (format "~a\n" (player-movimentacao jogador))
+                               (format "~a\n" (player-local jogador))
+                               (format "~a\n" (player-arma jogador))
+                               (format "~a\n" (player-balas jogador))
+                               (format "~a\n" (player-med-kit jogador)))))
+                                       
+(define (carregar)
+  (set! save-temp (read-lines "save-game.txt"))
+  (carregar-posx save-temp))
+
+(define (carregar-posx list)
+  (set-player-posx! jogador (string->number (first list)))
+  (carregar-posy (rest list)))
+
+(define (carregar-posy list)
+  (set-player-posy! jogador (string->number (first list)))
+  (carregar-posx-anterior (rest list)))
+
+(define (carregar-posx-anterior list)
+  (set-player-posx-anterior! jogador (string->number (first list)))
+  (carregar-posy-anterior (rest list)))
+
+(define (carregar-posy-anterior list)
+  (set-player-posy-anterior! jogador (string->number (first list)))
+  (carregar-vida (rest list)))
+
+(define (carregar-vida list)
+  (set-player-vida! jogador (string->number (first list)))
+  (carregar-status (rest list)))
+
+(define (carregar-status list)
+  (set-player-status! jogador (first list))
+  (carregar-sprite (rest list)))
+
+(define (carregar-sprite list)
+  (set-player-sprite! jogador (string->number (first list)))
+  (carregar-direcao (rest list)))
+
+(define (carregar-direcao list)
+  (set-player-direcao! jogador (first list))
+  (carregar-movimentacao (rest list)))
+
+(define (carregar-movimentacao list)
+  (set-player-movimentacao! jogador (first list))
+  (carregar-local (rest list)))
+
+(define (carregar-local list)
+  (set-player-local! jogador (string->number (first list)))
+  (carregar-arma (rest list)))
+
+(define (carregar-arma list)
+  (set-player-arma! jogador (string->number (first list)))
+  (carregar-balas (rest list)))
+
+(define (carregar-balas list)
+  (set-player-balas! jogador (string->number (first list)))
+  (carregar-med-kit (rest list)))
+
+(define (carregar-med-kit list)
+  (set-player-med-kit! jogador (string->number (first list))))
+  
+(define lista-inimigos (list (enemy 500 300 100 0 "Esquerda" "Parado")
+                             (enemy 600 300 100 0 "Esquerda" "Parado")
+                             (enemy 300 300 0 0 "Esquerda" "Parado")))
+
+(define (ia-inimigos lista)
+  (cond [(empty? lista) 0]
+        [else (segue lista)]))
+
+(define (segue lista)
+  (cond [(and (> (enemy-vida (first lista)) 0) (< (distancia-inimigo-jogador (first lista)) 150)) (ia-inimigo (first lista))])
+        ;[(and (> (enemy-vida (first lista)) 0) (> (distancia-inimigo-jogador (first lista)) 150)) (movimento-aleatorio (first lista))])
+  (ia-inimigos (rest lista)))
+
+(define (distancia-inimigo-jogador inimigo)
+  (sqrt (+ (expt (- (player-posx jogador) (enemy-posx inimigo)) 2) (expt (- (player-posy jogador) (enemy-posy inimigo)) 2))))
+
+(define (ia-inimigo inimigo)
+  (cond [(> (player-posx jogador) (enemy-posx inimigo)) (inimigo-direita inimigo)])
+  (cond [(< (player-posx jogador) (enemy-posx inimigo)) (inimigo-esquerda inimigo)])
+  (cond [(> (player-posy jogador) (enemy-posy inimigo)) (inimigo-baixo inimigo)])
+  (cond [(< (player-posy jogador) (enemy-posy inimigo)) (inimigo-cima inimigo)]))
+
+(define (inimigo-direita inimigo)
+  (cond [(vai-colidir-direita? inimigo) (decisao inimigo)]
+        [else (anda-inimigo-direita inimigo)]))
+(define (inimigo-esquerda inimigo)
+  (cond [(vai-colidir-esquerda? inimigo) (decisao inimigo)]
+        [else (anda-inimigo-esquerda inimigo)]))
+(define (inimigo-cima inimigo)
+  (cond [(vai-colidir-cima? inimigo) (decisao inimigo)]
+        [else (anda-inimigo-cima inimigo)]))
+(define (inimigo-baixo inimigo)
+  (cond [(vai-colidir-baixo? inimigo) (decisao inimigo)]
+        [else (anda-inimigo-baixo inimigo)]))
+
+(define (anda-inimigo-direita inimigo)
+  (set-enemy-posx! inimigo (+ (enemy-posx inimigo) 1)))
+(define (anda-inimigo-esquerda inimigo)
+  (set-enemy-posx! inimigo (- (enemy-posx inimigo) 1)))
+(define (anda-inimigo-cima inimigo)
+  (set-enemy-posy! inimigo (- (enemy-posy inimigo) 1)))
+(define (anda-inimigo-baixo inimigo)
+  (set-enemy-posy! inimigo (+ (enemy-posy inimigo) 1)))
+
+(define (decisao inimigo) 0)
+
+(define (gerador-med-kit)
+  (cond [(equal? (random 15) 2) (gera-med-kit)]))
+
+(define (gerador-municao)
+  (cond [(equal? (random 10) 2) (gera-municao)]))
+
+(define (gera-med-kit)
+  (set-medic-posx! med-kit (random 800))
+  (set-medic-posy! med-kit (random 600))
+  (set-medic-ativo! med-kit #t)
+  (cond [(colide-med-kit colisoes-mapa) (gera-med-kit)]))
+
+(define (gera-municao)
+  (set-amno-posx! municao (random 800))
+  (set-amno-posy! municao (random 600))
+  (set-amno-ativo! municao #t)
+  (cond [(colide-municao colisoes-mapa) (gera-municao)]))
+
+(define (colide-municao lista)
+  (cond [(empty? lista) #f]
+        [(dentro-limites-municao (first lista)) #t]
+        [else (colide-municao (rest lista))]))
+(define (dentro-limites-municao lista)
+  (cond [(and (and (>= (+ (amno-posx municao) 10) (first lista)) (<= (- (amno-posx municao) 10) (third lista)))
+              (and (>= (+ (amno-posy municao) 10) (second lista))  (<= (- (amno-posy municao) 10) (fourth lista)))) #t]
+        [else #f]))
+
+
+(define (colide-med-kit lista)
+  (cond [(empty? lista) #f]
+        [(dentro-limites-med-kit (first lista)) #t]
+        [else (colide-med-kit (rest lista))]))
+(define (dentro-limites-med-kit lista)
+  (cond [(and (and (>= (+ (medic-posx med-kit) 10) (first lista)) (<= (- (medic-posx med-kit) 10) (third lista)))
+              (and (>= (+ (medic-posy med-kit) 10) (second lista))  (<= (- (medic-posy med-kit) 10) (fourth lista)))) #t]
+        [else #f]))
+
+
+
+(define (gerador-inimigos)
+  (cond [(equal? (random 3) 2) (set! lista-inimigos (gera-lista-inimigos 12))]
+         [else (set! lista-inimigos (gera-lista-inimigos (random 4)))]))
+
+(define (gera-lista-inimigos num)
+  (cond [(equal? num 0) empty]
+        [else (cons (inimigo-aleatorio) (gera-lista-inimigos (- num 1)))]))
+
+(define (inimigo-aleatorio)
+  (set! inimigo-temp (enemy (random 800) (random 600) 100 0 "Esquerda" "Parado"))
+  (cond [(colide-inimigo inimigo-temp colisoes-mapa) (inimigo-aleatorio)]
+        [else inimigo-temp]))
+
+(define (pega-med-kit?)
+  (cond [(and (perto-med-kit) (equal? (medic-ativo med-kit) #t)) (pega-med-kit)]))
+
+(define (pega-municao?)
+  (cond [(and (perto-municao) (equal? (amno-ativo municao) #t)) (pega-municao)]))
+
+(define (perto-med-kit)
+  (cond [(< (sqrt (+ (expt (- (player-posx jogador) (medic-posx med-kit)) 2) (expt (- (player-posy jogador) (medic-posy med-kit)) 2))) 15) #t]
+        [else #f]))
+
+(define (perto-municao)
+  (cond [(< (sqrt (+ (expt (- (player-posx jogador) (amno-posx municao)) 2) (expt (- (player-posy jogador) (amno-posy municao)) 2))) 15) #t]
+        [else #f]))
+        
+
+(define (pega-med-kit)
+  (set-medic-ativo! med-kit #f)
+  (set-player-med-kit! jogador (+ (player-med-kit jogador) 1)))
+
+(define (pega-municao)
+  (set-amno-ativo! municao #f)
+  (set-player-balas! jogador (+ (player-balas jogador) 50)))
+  
+
+(define (vai-colidir-direita? inimigo)
+  (colide-inimigo (enemy (+ (enemy-posx inimigo) 2) (enemy-posy inimigo) (enemy-vida inimigo) (enemy-sprite inimigo) (enemy-direcao inimigo) (enemy-movimentacao inimigo)) colisoes-mapa))
+
+(define (vai-colidir-esquerda? inimigo)
+  (colide-inimigo (enemy (- (enemy-posx inimigo) 2) (enemy-posy inimigo) (enemy-vida inimigo) (enemy-sprite inimigo) (enemy-direcao inimigo) (enemy-movimentacao inimigo)) colisoes-mapa))
+
+(define (vai-colidir-cima? inimigo)
+  (colide-inimigo (enemy (enemy-posx inimigo) (- (enemy-posy inimigo) 2) (enemy-vida inimigo) (enemy-sprite inimigo) (enemy-direcao inimigo) (enemy-movimentacao inimigo)) colisoes-mapa))
+
+(define (vai-colidir-baixo? inimigo)
+  (colide-inimigo (enemy (enemy-posx inimigo) (+ (enemy-posy inimigo) 2) (enemy-vida inimigo) (enemy-sprite inimigo) (enemy-direcao inimigo) (enemy-movimentacao inimigo)) colisoes-mapa))
+
+(define jogo (game "Jogo" #f))
+(define proximo-sprite? 0)
+(define opcao-menu 0)
+(define inimigo-temp (enemy 0 0 0 0 "Esquerda" "Parado"))
+(define sel-inventario 1)
+(define opcao-inventario 1)
+(define tempo-dano 12)
+(define tempo-arma (gun-cadencia arma))
+(define colisoes-temp 0)
+(define colisoes-mapa '())
+(define jogador-imagem (bitmap/file (format "Imagens/Jogador/Jogador ~a ~a.png" (player-direcao jogador) (player-sprite jogador))))
+(define inimigo-imagem (bitmap/file "Imagens/Inimigo/Inimigo.png"))
+(define inimigo-derrotado-imagem (bitmap/file "Imagens/Inimigo/Inimigo Derrotado.png"))
+(define mapa (bitmap/file (format "Imagens/Mapa/Base/Local (~a).png" (player-local jogador))))
+(define mapa-sobreposicao (bitmap/file (format "Imagens/Mapa/Sobreposicao/Local Sobreposicao (~a).png" (player-local jogador))))
+(define pause-imagem (bitmap/file "Imagens/Pause/Tela Pause.png"))
+(define cursor-pause (bitmap/file "Imagens/Pause/Cursor Pause.png"))
+(define imagem-tela-fim (bitmap/file "Imagens/Outros/Tela Fim.png"))
+(define tiro-direita (bitmap/file "Imagens/Outros/Tiro Direita.png"))
+(define tiro-esquerda (bitmap/file "Imagens/Outros/Tiro Esquerda.png"))
+(define tiro-cima (bitmap/file "Imagens/Outros/Tiro Cima.png"))
+(define tiro-baixo (bitmap/file "Imagens/Outros/Tiro Baixo.png"))
+(define perigo (bitmap/file "Imagens/Outros/Perigo.png"))
+(define med-kit-image (bitmap/file "Imagens/Outros/Med Kit Image.png"))
+(define municao-image (bitmap/file "Imagens/Outros/Municao Image.png"))
+(define tiro tiro-direita)
+(define mapa-imagem (bitmap/file "Imagens/Pause/Mapa Imagem.png"))
+(define hud-imagem (bitmap/file "Imagens/Outros/Hud Imagem.png"))
+
+(define (teclado mundo tecla)
+  (cond [(equal? (game-status jogo) "Jogo") (teclado-jogo tecla)]
+        [(equal? (game-status jogo) "Pause") (teclado-pause tecla)]
+        [(equal? (game-status jogo) "Mapa") (teclado-mapa tecla)]))
+
+(define (teclado-jogo tecla)
+  (cond [(key=? tecla "right") (anda-direita)]
+        [(key=? tecla "left") (anda-esquerda)]
+        [(key=? tecla "up") (anda-cima)]
+        [(key=? tecla "down") (anda-baixo)]
+        [(key=? tecla "escape") (ativa-menu-pause)]
+        [(key=? tecla " ") (atirando)]
+        [(or (key=? tecla "a") (key=? tecla "A")) (ativa-med-kit)]))
+(define (teclado-pause tecla)
+  (cond [(key=? tecla "up") (menu-cima)]
+        [(key=? tecla "down") (menu-baixo)]
+        [(key=? tecla "escape") (desativa-menu-pause)]
+        [(key=? tecla "\r") (escolhe-menu)]))
+(define (teclado-mapa tecla)
+  (cond [(or (key=? tecla "\r") (key=? tecla "escape")) (set-game-status! jogo "Pause")]))
+
+(define (atirando)
+  (set-player-movimentacao! jogador "Atirando"))
+
+(define (testa-tempo-atira)
+  (cond [(tempo-de-arma) (atira lista-inimigos)]))
+
+(define (atira lista) 
+  (cond [(empty? lista) (gasta-municao)]
+        [(and (dentro-alcance-arma (first lista)) (tem-municao?)) (and (dano-inimigo (first lista)) (atira (rest lista)))]
+        [else (and (set! tempo-arma 0) (atira (rest lista)))]))
+
+(define (tem-municao?)
+  (cond [(> (player-balas jogador) 0) #t]
+        [else #f]))
+
+(define (gasta-municao)
+  (cond [(> (player-balas jogador) 0) (set-player-balas! jogador (- (player-balas jogador) 1))]))
+
+(define (dano-inimigo inimigo)
+  (set-enemy-vida! inimigo (- (enemy-vida inimigo) (gun-dano arma))))
+
+(define (dentro-alcance-arma inimigo)
+  (cond [(equal? (player-direcao jogador) "Direita")
+         (cond [(and (> (enemy-vida inimigo) 0) 
+         (and (and (>= (- (enemy-posx inimigo) 10) (player-posx jogador))
+                   (<= (- (enemy-posx inimigo) 10) (+ (player-posx jogador) (gun-alcance arma))))
+              (and (>= (+ (enemy-posy inimigo) 20) (- (player-posy jogador) (gun-espalhamento arma)))
+                   (<= (- (enemy-posy inimigo) 20) (+ (player-posy jogador) (gun-espalhamento arma)))))) #t]
+         [else #f])]
+        [(equal? (player-direcao jogador) "Esquerda")
+         (cond [(and (> (enemy-vida inimigo) 0) 
+         (and (and (<= (+ (enemy-posx inimigo) 10) (player-posx jogador))
+                   (>= (+ (enemy-posx inimigo) 10) (- (player-posx jogador) (gun-alcance arma))))
+              (and (>= (+ (enemy-posy inimigo) 20) (- (player-posy jogador) (gun-espalhamento arma)))
+                   (<= (- (enemy-posy inimigo) 20) (+ (player-posy jogador) (gun-espalhamento arma)))))) #t]
+         [else #f])]
+        [(equal? (player-direcao jogador) "Cima")
+         (cond [(and (> (enemy-vida inimigo) 0) 
+         (and (and (<= (+ (enemy-posy inimigo) 20) (player-posy jogador))
+                   (>= (+ (enemy-posy inimigo) 20) (- (player-posy jogador) (gun-alcance arma))))
+              (and (>= (+ (enemy-posx inimigo) 10) (- (player-posx jogador) (gun-espalhamento arma)))
+                   (<= (- (enemy-posx inimigo) 10) (+ (player-posx jogador) (gun-espalhamento arma)))))) #t]
+         [else #f])]
+        [(equal? (player-direcao jogador) "Baixo")
+         (cond [(and (> (enemy-vida inimigo) 0) 
+         (and (and (>= (- (enemy-posy inimigo) 20) (player-posy jogador))
+                   (<= (- (enemy-posy inimigo) 20) (+ (player-posy jogador) (gun-alcance arma))))
+              (and (>= (+ (enemy-posx inimigo) 10) (- (player-posx jogador) (gun-espalhamento arma)))
+                   (<= (- (enemy-posx inimigo) 10) (+ (player-posx jogador) (gun-espalhamento arma)))))) #t]
+         [else #f])]))
+
+(define (ativa-med-kit)
+  (cond [(and (> (player-med-kit jogador) 0) (< (player-vida jogador) 100)) (and (set-player-med-kit! jogador (- (player-med-kit jogador) 1))
+                                             (set-player-vida! jogador 100))]))
+
+(define (ativa-acao-item)
+  (set-game-acao-item! jogo #t))
+(define (desativa-acao-item)
+  (set-game-acao-item! jogo #f))
+   
+
+(define (anda-direita)
+  (set-player-movimentacao! jogador "Andando")
+  (set-player-direcao! jogador "Direita")
+  (set! tiro tiro-direita)
+  (carregar-jogador))
+(define (anda-esquerda)
+  (set-player-movimentacao! jogador "Andando")
+  (set-player-direcao! jogador "Esquerda")
+  (set! tiro tiro-esquerda)
+  (carregar-jogador))
+(define (anda-baixo)
+  (set-player-movimentacao! jogador "Andando")
+  (set-player-direcao! jogador "Baixo")
+  (set! tiro tiro-baixo)
+  (carregar-jogador))
+(define (anda-cima)
+  (set-player-movimentacao! jogador "Andando")
+  (set-player-direcao! jogador "Cima")
+  (set! tiro tiro-cima)
+  (carregar-jogador))
+(define (menu-cima)
+  (cond [(equal? opcao-menu 0) (set! opcao-menu 3)]
+        [else (set! opcao-menu (- opcao-menu 1))]))
+(define (menu-baixo)
+  (cond [(equal? opcao-menu 3) (set! opcao-menu 0)]
+        [else (set! opcao-menu (+ opcao-menu 1))]))
+(define (ativa-menu-pause)
+  (set-player-movimentacao! jogador "Parado")
+  (set-game-status! jogo "Pause"))
+(define (desativa-menu-pause)
+  (set-game-status! jogo "Jogo"))
+(define (escolhe-menu)
+  (cond [(equal? opcao-menu 0) (ver-mapa)]
+        [(equal? opcao-menu 1) (salvar)]
+        [(equal? opcao-menu 2) (carregar)]
+        [(equal? opcao-menu 3) (sair)]))
+
+(define (ver-mapa)
+  (set-game-status! jogo "Mapa"))
+
+(define (sair)
+  (set-game-status! jogo "Jogo"))        
+        
+(define (parte-direita)
+  (cond [(> (remainder (player-local jogador) 16) 0) (parte-direita-2)]
+        [else (set-player-posx! jogador 780)]))
+(define (parte-direita-2)
+  (set-player-local! jogador (+ (player-local jogador) 1))
+  (set-player-posx! jogador 20)
+  (carregar-mapa)
+  (gerador-inimigos)
+  (gerador-med-kit)
+  (gerador-municao))
+(define (parte-esquerda)
+  (cond [(and (false? (equal? (remainder (player-local jogador) 64) 16)) (> (player-local jogador) 1)) (parte-esquerda-2)]
+        [else (set-player-posx! jogador 20)]))
+(define (parte-esquerda-2)
+  (set-player-local! jogador (- (player-local jogador) 1))
+  (set-player-posx! jogador 780)
+  (carregar-mapa)
+  (gerador-inimigos)
+  (gerador-med-kit)
+  (gerador-municao))
+(define (parte-cima)
+  (cond [(> (player-local jogador) 16) (parte-cima-2)]
+        [else (set-player-posy! jogador 20)]))
+(define (parte-cima-2)
+  (set-player-local! jogador (- (player-local jogador) 16))
+  (set-player-posy! jogador 580)
+  (carregar-mapa)
+  (gerador-inimigos)
+  (gerador-med-kit)
+  (gerador-municao))
+(define (parte-baixo)
+  (cond [(< (player-local jogador) 241) (parte-baixo-2)]
+        [else (set-player-posy! jogador 580)]))
+(define (parte-baixo-2)
+  (set-player-local! jogador (+ (player-local jogador) 16))
+  (set-player-posy! jogador 20)
+  (carregar-mapa)
+  (gerador-inimigos)
+  (gerador-med-kit)
+  (gerador-municao))
+
+(define (carregar-mapa)
+  (set! mapa (bitmap/file (format "Imagens/Mapa/Base/Local (~a).png" (player-local jogador))))
+  (set! colisoes-temp (read-lines (format "Recursos/Mapa/Colisoes-Mapa/Local (~a).txt" (player-local jogador))))
+  (set! colisoes-mapa (carregar-mapa-recursos colisoes-temp)))
+
+(define (carregar-jogador)
+  (cond [(> (player-vida jogador) 0) (set! jogador-imagem (bitmap/file (format "Imagens/Jogador/Jogador ~a ~a.png" (player-direcao jogador) (player-sprite jogador))))]
+        [else (set! jogador-imagem (bitmap/file "Imagens/Jogador/Jogador Derrotado.png"))]))
+
+(define (carregar-mapa-recursos lista)
+  (cond [(empty? lista) '()]
+        [else (cons (list (string->number (first lista))
+                          (string->number (second lista))
+                          (string->number (third lista))
+                          (string->number (fourth lista))) (carregar-mapa-recursos (cddddr lista)))]))
+
+(define (colide-jogador lista)
+  (cond [(or (empty? lista) (empty? (first lista))) #f]
+        [(dentro-limites (first lista)) #t]
+        [else (colide-jogador (rest lista))]))
+(define (dentro-limites lista)
+  (cond [(and (and (>= (+ (player-posx jogador) 10) (first lista)) (<= (- (player-posx jogador) 10) (third lista)))
+              (and (>= (+ (player-posy jogador) 0) (second lista))  (<= (- (player-posy jogador) 0) (fourth lista)))) #t]
+        [else #f]))
+
+
+(define (vai-colidir-jogador? lista)
+  (cond [(empty? lista) #f]
+        [(vai-dentro-limites? (first lista)) #t]
+        [else (vai-colidir-jogador? (rest lista))]))
+(define (vai-dentro-limites? lista)
+  (cond [(and (and (>= (+ (player-posx jogador) 28) (first lista)) (<= (- (player-posx jogador) 28) (third lista)))
+              (and (>= (+ (player-posy jogador) 38) (second lista))  (<= (+ (player-posy jogador) 38) (fourth lista)))) #t]
+        [else #f]))
+
+
+(define (colide-inimigo inimigo lista)
+  (cond [(empty? lista) #f]
+        [(dentro-limites-inimigo inimigo (first lista)) #t]
+        [else (colide-inimigo inimigo (rest lista))]))
+(define (dentro-limites-inimigo inimigo lista)
+  (cond [(and (and (>= (+ (enemy-posx inimigo) 10) (first lista)) (<= (- (enemy-posx inimigo) 10) (third lista)))
+              (and (>= (+ (enemy-posy inimigo) 20) (second lista))  (<= (- (enemy-posy inimigo) 20) (fourth lista)))) #t]
+        [else #f]))
+                           
+(define (solta-teclado mundo1 tecla-liberada)
+  (cond [(and (equal? (player-direcao jogador) "Direita") (equal? tecla-liberada "right")) (set-player-movimentacao! jogador "Parado")]
+        [(and (equal? (player-direcao jogador) "Esquerda") (equal? tecla-liberada "left")) (set-player-movimentacao! jogador "Parado")]
+        [(and (equal? (player-direcao jogador) "Cima") (equal? tecla-liberada "up")) (set-player-movimentacao! jogador "Parado")]
+        [(and (equal? (player-direcao jogador) "Baixo") (equal? tecla-liberada "down")) (set-player-movimentacao! jogador "Parado")]
+        [(and (equal? (player-movimentacao jogador) "Atirando") (equal? tecla-liberada " ")) (set-player-movimentacao! jogador "Parado")]))
+
+
+
+(define (renderiza-tela mundo)
+  (cond [(equal? (game-status jogo) "Pause") (renderiza-pause mundo)]
+        [(equal? (game-status jogo) "Jogo") (renderiza-hud mundo)]
+        [(equal? (game-status jogo) "Mapa") (renderiza-mapa mundo)]))
+
+(define (renderiza-pause mundo)
+  (place-image cursor-pause 570 (+ 124 (* opcao-menu 70))
+  (place-image pause-imagem 400 300 (renderiza-hud mundo))))
+
+(define (renderiza-mapa mundo)
+   (place-image mapa-imagem 400 300 (renderiza-hud mundo)))
+
+(define (renderiza-hud mundo)
+  (place-image (text/font (format "~a" (player-vida jogador)) 10 "white" "trebuchet ms" 'swiss 'normal 'bold #f) 50 25
+  (place-image (text/font (format "~a" (player-med-kit jogador)) 10 "white" "trebuchet ms" 'swiss 'normal 'bold #f) 50 55
+  (place-image (text/font (format "~a" (player-balas jogador)) 10 "white" "trebuchet ms" 'swiss 'normal 'bold #f) 50 85
+  (place-image hud-imagem 400 300 (renderiza-jogo mundo))))))
+
+(define (renderiza-jogo mundo)
+  (cond [(<= (player-vida jogador) 40) (renderiza-perigo mundo)]
+        [else (renderiza-mapa-sobreposicao mundo)]))
+
+(define (renderiza-perigo mundo)
+  (place-image perigo 400 300 (renderiza-mapa-sobreposicao mundo)))
+
+(define (renderiza-mapa-sobreposicao mundo)
+  (place-image mapa-sobreposicao 400 300 (renderiza-tiro mundo)))
+
+(define (renderiza-tiro mundo)
+  (cond [(and (equal? tempo-arma 0) (tem-municao?)) (renderiza-tiro-2 mundo)]
+        [else (renderiza-jogador mundo)]))
+
+(define (renderiza-tiro-2 mundo)
+  (place-image tiro (player-posx jogador) (player-posy jogador) (renderiza-jogador mundo)))
+
+(define (renderiza-jogador mundo)
+  (place-image jogador-imagem (player-posx jogador) (player-posy jogador) (renderiza-inimigos lista-inimigos mundo))) 
+
+(define (renderiza-inimigos lista mundo)
+  (cond [(empty? lista) (renderiza-mapa-jogo mundo)]
+        [(> (enemy-vida (first lista)) 0) (place-image inimigo-imagem (enemy-posx (first lista)) (enemy-posy (first lista)) (renderiza-inimigos (rest lista) mundo))]
+        [else (place-image inimigo-derrotado-imagem (enemy-posx (first lista)) (enemy-posy (first lista)) (renderiza-inimigos (rest lista) mundo))]))
+
+(define (renderiza-mapa-jogo mundo)
+  (cond [(equal? (medic-ativo med-kit) #t) (renderiza-med-kit mundo)]
+        [else (renderiza-municao? mundo)]))
+
+(define (renderiza-municao? mundo)
+  (cond [(equal? (amno-ativo municao) #t) (renderiza-municao mundo)]
+        [else (renderiza-mapa-jogo-2 mundo)]))
+
+(define (renderiza-med-kit mundo)
+  (place-image med-kit-image (medic-posx med-kit) (medic-posy med-kit) (renderiza-municao? mundo)))
+
+(define (renderiza-municao mundo)
+  (place-image municao-image (amno-posx municao) (amno-posy municao) (renderiza-mapa-jogo-2 mundo)))
+
+(define (renderiza-mapa-jogo-2 mundo)
+  (place-image mapa 400 300 (empty-scene 800 600)))
+
+(define (testa-distancia-dano lista)
+  (cond [(empty? lista) 0]
+        [(alcance-dano? (first lista)) (dano)]
+        [else (testa-distancia-dano (rest lista))]))
+         
+(define (dano) 
+  (set-player-vida! jogador (- (player-vida jogador) 15))
+  (set! tempo-dano 0)
+  (recuo-dano))
+
+(define (alcance-dano? inimigo)
+  (cond [(and (> (enemy-vida inimigo) 0) (and (and (>= (player-posx jogador) (- (enemy-posx inimigo) 30))
+                   (<= (player-posx jogador) (+ (enemy-posx inimigo) 30)))
+              (and (>= (player-posy jogador) (- (enemy-posy inimigo) 30))
+                   (<= (player-posy jogador) (+ (enemy-posy inimigo) 30))))) #t]
+        [else #f]))
+
+(define (roda-jogo mundo)
+  (cond [(> (player-posx jogador) 800) (parte-direita)]
+        [(< (player-posx jogador) 0) (parte-esquerda)]
+        [(> (player-posy jogador) 600) (parte-baixo)]
+        [(< (player-posy jogador) 0) (parte-cima)])
+  (tempo-de-dano)
+  (tempo-de-arma)
+  (pega-med-kit?)
+  (pega-municao?)
+  (ia-inimigos lista-inimigos)
+  (cond [(and (equal? (player-movimentacao jogador) "Andando") (equal? (game-status jogo) "Jogo")) (anda)]
+        [(and (equal? (player-movimentacao jogador) "Atirando") (equal? (game-status jogo) "Jogo")) (testa-tempo-atira)]))
+  
+(define (tempo-de-dano)
+  (cond [(< tempo-dano 12) (set! tempo-dano (+ tempo-dano 1))]
+        [(equal? tempo-dano 12) (testa-distancia-dano lista-inimigos)]))
+
+(define (tempo-de-arma)
+  (cond [(< tempo-arma (gun-cadencia arma)) (and (set! tempo-arma (+ tempo-arma 1)) #f)]
+        [(equal? tempo-arma (gun-cadencia arma)) #t]))
+  
+(define (recuo-dano)
+  (cond [(and (equal? (player-direcao jogador) "Direita") (equal? (vai-colidir-jogador? colisoes-mapa) #f)) (set-player-posx! jogador (- (player-posx jogador) 18))]          
+        [(and (equal? (player-direcao jogador) "Esquerda") (equal? (vai-colidir-jogador? colisoes-mapa) #f)) (set-player-posx! jogador (+ (player-posx jogador) 18))]
+        [(and (equal? (player-direcao jogador) "Cima") (equal? (vai-colidir-jogador? colisoes-mapa) #f)) (set-player-posy! jogador (+ (player-posy jogador) 18))]         
+        [(and (equal? (player-direcao jogador) "Baixo") (equal? (vai-colidir-jogador? colisoes-mapa) #f)) (set-player-posy! jogador (- (player-posy jogador) 18))]))
+  
+(define (anda)
+  (salva-pos-anterior)
+  (cond [(equal? (player-direcao jogador) "Direita") (set-player-posx! jogador (+ (player-posx jogador) 4))]          
+        [(equal? (player-direcao jogador) "Esquerda") (set-player-posx! jogador (- (player-posx jogador) 4))]
+        [(equal? (player-direcao jogador) "Cima") (set-player-posy! jogador (- (player-posy jogador) 4))]         
+        [(equal? (player-direcao jogador) "Baixo") (set-player-posy! jogador (+ (player-posy jogador) 4))])
+  (cond [(colide-jogador colisoes-mapa) (retorna-pos-anterior)])
+  (decide-proximo-sprite))
+  
+(define (salva-pos-anterior)
+  (set-player-posx-anterior! jogador (player-posx jogador))
+  (set-player-posy-anterior! jogador (player-posy jogador)))
+
+(define (retorna-pos-anterior)
+  (set-player-posx! jogador (player-posx-anterior jogador))
+  (set-player-posy! jogador (player-posy-anterior jogador)))
+
+(define (inicia-jogo)
+  (carregar-mapa))
+
+(define (decide-proximo-sprite)
+  (cond [(> proximo-sprite? 5) (proximo-sprite)]
+        [else (set! proximo-sprite? (+ proximo-sprite? 1))]))
+(define (proximo-sprite)
+  (set-player-sprite! jogador (remainder (+ (player-sprite jogador) 1) 4))
+  (set! proximo-sprite? 0)
+  (carregar-jogador))
+
+(define (fecha-janela mundo)
+  (cond [(equal? (game-status jogo) "Encerrar") #t]
+        [else #f]))
+
+(define (fim? mundo)
+  (cond [(< (player-vida jogador) 0) #t]
+        [else #f]))
+
+(define (tela-fim mundo)
+  (carregar-jogador)
+  (place-image imagem-tela-fim 400 300 (renderiza-hud mundo)))
+        
+(big-bang (inicia-jogo)
+ (on-tick roda-jogo)
+ (on-key teclado)
+ (on-release solta-teclado)
+ (to-draw renderiza-tela)
+ (stop-when fim? tela-fim))
