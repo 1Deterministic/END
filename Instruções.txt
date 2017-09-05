@@ -1,4 +1,4 @@
 Direcionais - movimentam o jogador
-"a" - Ativa o kit médico
-Espaço - atira
-Esc - pause (cuidado, o pause não para o jogo, apenas abre o menu)
+"a" - Ativa o kit mï¿½dico
+Espaï¿½o - atira
+Esc - pause (cuidado, o pause nï¿½o para o jogo, apenas abre o menu)
