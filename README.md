@@ -37,3 +37,5 @@ Project Structure
     The "Imagens/Mapa/Sobreposicao" folder contains images of parts of the map wich must be rendered over the character (locations where the map hides it). These images must be transparent and contain only the image of the part wich will be rendered over the other elements.
     The "Imagens/Jogador" folder contains the sprites for the character that gives movement effect. The name of the image is your application on the code: the direction the character walks and its number on the sequence. Baixo = down, cima = up, direita = right, esquerda = left.
 </p>
+
+<h2><strong>2013</strong></h2>
