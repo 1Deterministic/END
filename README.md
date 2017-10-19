@@ -2,8 +2,6 @@ END
 <p>
     END é um jogo de sobrevivência contra zumbis que tem absolutamente nenhum objetivo. Foi um projeto de faculdade que eu fiz há algum tempo, escrito na linguagem Racket. Foi planejado para ser modificado e uma espécie de referência de código para eventual uso futuro.
 </p>
-
-<br>
 Gameplay
 <p>
     Direcionais - movimentam o jogador
@@ -11,8 +9,6 @@ Gameplay
     Espaco - atira
     Esc - pause (cuidado, o pause nao para o jogo, apenas abre o menu)
 </p>
-
-<br>
 Estrutura do projeto
 <p>
     Alguns elementos do jogo devem ser alterados fora do código. 
@@ -26,7 +22,6 @@ END
 <p>
     END is a zombie survival game that has absolutely no objective. It was a college project I made some time ago, written in Racket language. It was planned to be modified and some kind of code reference for eventual future use.
 </p>
-
 Gameplay
 <p>
     Arrows - move the character
@@ -34,7 +29,6 @@ Gameplay
     space - shoot
     esc - pause (be careful, it doesnt stop the game, just opens the menu)
 </p>
-
 Project Structure
 <p>
     Some elements of the game must be modified outside the code.
