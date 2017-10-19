@@ -1,5 +1,4 @@
 <h2><strong>END</strong></h2>
-
 <p>pt-br</p>
 <p>
     END é um jogo de sobrevivência contra zumbis que tem absolutamente nenhum objetivo. Foi um projeto de faculdade que eu fiz há algum tempo, escrito na linguagem Racket. Foi planejado para ser modificado e uma espécie de referência de código para eventual uso futuro.
