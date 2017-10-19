@@ -38,4 +38,4 @@ Project Structure
     The "Imagens/Jogador" folder contains the sprites for the character that gives movement effect. The name of the image is your application on the code: the direction the character walks and its number on the sequence. Baixo = down, cima = up, direita = right, esquerda = left.
 </p>
 
-<h2><strong>2013</strong></h2>
+<tfoot><strong>2013</strong></tfoot>
