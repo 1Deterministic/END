@@ -1,4 +1,0 @@
-Direcionais - movimentam o jogador
-"a" - Ativa o kit m�dico
-Espa�o - atira
-Esc - pause (cuidado, o pause n�o para o jogo, apenas abre o menu)

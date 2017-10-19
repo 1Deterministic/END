@@ -1,7 +1,0 @@
-Alguns elementos do jogo devem ser alterados fora do código. 
-
-As Imagens da pasta "Imagens" podem ser livremente editadas, atentando apenas para que suas resoluções sejam preservadas. Do contrário, a lógica do jogo deve ser alterada em locais como o detecção de colisão e renderização da imagem, mas nada que seja impossível de alterar. 
-A pasta "Recursos/Mapa" contém vários arquivos-texto com as coordenadas dos locais de colisão de cada parte do mapa (localizado em "Imagens/Mapa/Base"). Uma colisão é formada por quatro coordenadas: x inicial, y inicial, x final e y final. Ao mudar o mapa lembre-se de adequar os locais de colisão do arquivo texto referente a parte do mapa que foi editada. Jamais deixe uma linha em branco no fim do arquivo, o arquivo deve ter um numero de linhas multiplo de 4 para que os locais de colisao sejam carregados corretamente.
-A pasta "Imagens/Mapa/Sobreposicao" contém imagens de partes do mapa que devem ser renderizadas por cima do jogador (locais onde o mapa o esconde). Essas imagens devem ser transparentes e conter o desenho somente da parte a ser impressa sobre os demais elementos do mapa.
-A pasta "Imagens/Jogador" contém os sprites do jogador que dão impressão de movimento. O nome da imagem refere a sua utilização no código: direção que o jogador anda e numero do sprite. 
-
