@@ -1,5 +1,8 @@
-<h2><strong>END</strong></h2>
-<p><strong>pt-br</strong></p>
+<h2><strong><center>END</center></strong></h2>
+<a href="#br"><strong>Portugûes</strong></a><br>
+<a href="#en"><strong>English</strong></a><br>
+
+<h3 id="br"><center>Portugûes</center></h3>
 <p>
     END é um jogo de sobrevivência contra zumbis que tem absolutamente nenhum objetivo. Foi um projeto de faculdade que eu fiz há algum tempo, escrito na linguagem Racket. Foi planejado para ser modificado e uma espécie de referência de código para eventual uso futuro.
 </p>
@@ -19,7 +22,7 @@ Estrutura do projeto
     A pasta "Imagens/Jogador" contém os sprites do jogador que dão impressão de movimento. O nome da imagem refere a sua utilização no código: direção que o jogador anda e numero do sprite. 
 </p>
 
-<p><strong>en-us</strong></p>
+<h3 id="en"><center>English</center></h3>
 <p>
     END is a zombie survival game that has absolutely no objective. It was a college project I made some time ago, written in Racket language. It was planned to be modified and some kind of code reference for eventual future use.
 </p>
