@@ -2,7 +2,7 @@
 <a href="#br"><strong>Portugûes</strong></a><br>
 <a href="#en"><strong>English</strong></a><br>
 
-<h3 id="br"><center>Portugûes</center></h3>
+<h3 id="br"><center>Português</center></h3>
 <p>
     END é um jogo de sobrevivência contra zumbis que tem absolutamente nenhum objetivo. Foi um projeto de faculdade que eu fiz há algum tempo, escrito na linguagem Racket. Foi planejado para ser modificado e uma espécie de referência de código para eventual uso futuro.
 </p>
