@@ -8,10 +8,10 @@
 </p>
 Gameplay
 <p>
-    Direcionais - movimentam o jogador
-    a - Ativa o kit medico
-    Espaco - atira
-    Esc - pause (cuidado, o pause nao para o jogo, apenas abre o menu)
+    Direcionais - movimentam o jogador<br>
+    a - Ativa o kit medico<br>
+    Espaco - atira<br>
+    Esc - pause (cuidado, o pause nao para o jogo, apenas abre o menu)<br>
 </p>
 Estrutura do projeto
 <p>
@@ -28,10 +28,10 @@ Estrutura do projeto
 </p>
 Gameplay
 <p>
-    Arrows - move the character
-    a - activates the medkit
-    space - shoot
-    esc - pause (be careful, it doesnt stop the game, just opens the menu)
+    Arrows - move the character<br>
+    a - activates the medkit<br>
+    space - shoot<br>
+    esc - pause (be careful, it doesnt stop the game, just opens the menu)<br>
 </p>
 Project Structure
 <p>
