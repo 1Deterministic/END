@@ -22,10 +22,10 @@ A pasta "Imagens/Jogador" contém os sprites do jogador que dão impressão de m
 END is a zombie survival game that has absolutely no objective. It was a college project I made some time ago, written in Racket language. It was planned to be modified and some kind of code reference for eventual future use.
 
 ## Gameplay
-Arrows - move the character
-a - activates the medkit
-space - shoot
-esc - pause (be careful, it doesnt stop the game, just opens the menu)
+* Arrows - move the character
+* a - activates the medkit
+* space - shoot
+* esc - pause (be careful, it doesnt stop the game, just opens the menu)
 
 ## Project Structure
 
